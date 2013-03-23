@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+	
+	<!-- 数据源 -->
+	<bean id="myBatisDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="${driverClassName}"/>
+		<property name="username" value="${uname}"/>
+		<property name="password" value="${password}"/>
+		<property name="url" value="${url}"/>
+	</bean>
+
+	<!-- DBCP数据源 -->
+	<!-- <bean id="myBatisDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close" lazy-init="true">
+		<property name="driverClassName" value="${driverClassName}" />
+		<property name="url" value="${url}" />
+		<property name="username" value="${name}" />
+		<property name="password" value="${password}" />
+	</bean> -->
+	<!-- 
+		配置SqlSessionFactoryBean ,只配置到这一步的话，我们可以使用SqlSessionDaoSupport，
+		具体的数据操作类**DaoImpl继承这个类，我们便可以通过getSqlSession(),得到SqlSession
+	 -->
+	<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 数据源 -->
+		<property name="dataSource" ref="myBatisDataSource"/>
+		<!-- SQL映射文件 -->
+		<property name="mapperLocations" value="classpath*:mybatis/*.xml"></property>
+		<!-- 类的别名扫描的地方 -->
+		<property name="typeAliasesPackage" value="com.lee.study.ssmSecurity.domain"/>
+	</bean>
+	<!-- 配置数据库事务 -->
+	<bean id="myBatisTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="myBatisDataSource"></property>
+	</bean>
+	<!-- 注解事务驱动 -->
+	<tx:annotation-driven transaction-manager="myBatisTransactionManager" />
+
+	<!-- 直接搜索Mapper，注射到service层中,我们就可以直接操作Mapper来操作XML中的crud等方法,本例中我们不适用 -->
+	<!-- <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.lee.study.ssmSecurity.dao" />
+	</bean> -->
+	
+	<!-- Mybatis SqlSession在Spring中的模板类 ,直接在具体的**DaoImpl中操作XML中curd-->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<!--SessionFactory  -->
+  		<constructor-arg index="0" ref="sqlSessionFactoryBean" />
+  		<!-- 批量操作 -->
+  		<constructor-arg index="1" value="BATCH" />
+	</bean>
+</beans>
