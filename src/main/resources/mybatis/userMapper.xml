@@ -2,12 +2,86 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-  
+<!--操作User实体  -->
 <mapper namespace="com.lee.study.ssmSecurity.domain.User">
-  <select id="find" parameterType="int" resultType="User">
-    select * from t_user where id = #{id}
-  </select>
-  <insert id="save" parameterType="User">
-  	insert into t_user(name,address) values(#{name},#{address})
+  <insert id="add" parameterType="User">
+  	insert into 
+  		t_user(username,password,nickname,type)
+  	values
+  		(#{username},#{password},#{nickname},#{type})
   </insert>
+  <update id="update" parameterType="User">
+  	update t_user set 
+  		username=#{username},password=#{password},nickname=#{nickname},type=#{type}
+  	where
+  	    id=#{id} 
+  </update>
+  <delete id="delete" parameterType="int">
+  	delete from t_user where id=#{id}
+  </delete>
+  <!-- 集合关联 -->
+  <resultMap type="User" id="userMap" autoMapping="true">
+  	<id column="user_id" property="id"/>
+  	<collection property="addresses" ofType="Address">
+  		<id column="a_id" property="id"/>
+  		<result column="phone" property="phone"/>
+  		<result column="postcode" property="postcode"/>
+  		<result column="name" property="name"/>
+  	</collection>
+  </resultMap>
+  <!-- SelectEntityById -->
+  <select id="load" parameterType="int" resultMap="userMap">
+  	select 
+  		*,t2.id as 'a_id' 
+  	from 
+  		t_user t1 left join t_address t2 on(t1.id = t2.user_id)
+  	where
+  		 t1.id=#{id}
+  </select>
+  <!-- 根据用户名来查找User -->
+	<select id="load_by_username" resultMap="userMap" parameterType="string">
+		select 
+			*,t2.id as 'a_id' 
+		from 
+			t_user t1 left join t_address t2 on(t1.id = t2.user_id) 
+		where 
+			t1.username=#{username}
+	</select>
+	<!-- 动态SQL -->
+	<!-- 采用普通的方式来分页+排序+条件查询 -->
+	<!-- <select id="find" resultType="User" parameterType="map">
+		select * from t_user where
+			(username like #{name} or nickname like #{name}) 
+		order by  ${order} ${sort} 
+		limit #{pageOffset},#{pageSize}
+	</select> -->
+	<!-- 使用动态映射来实现条件+排序+分页查询 -->
+	<select id="find" resultType="User" parameterType="map">
+		select * from t_user
+		<where>
+			<if test="name!=null">
+				(username like #{name} or nickname like #{name})
+			</if>
+			<if test="type!=null">
+				and type=#{type}
+			</if>
+		</where>
+		<if test="sort!=null">
+			order by ${sort}
+			<if test="order!=null">
+				${order}
+			</if>
+		</if>
+		limit #{pageOffset},#{pageSize}
+	</select>
+	<!-- <select id="find_count" resultType="int" parameterType="map">
+		select count(*) from t_user where
+			(username like #{name} or nickname like #{name})
+	</select>	 -->
+	<select id="find_count" resultType="int" parameterType="map">
+		select count(*) from t_user
+		<if test="name!=null">
+			where (username like #{name} or nickname like #{name})
+		</if>
+	</select>
 </mapper>
